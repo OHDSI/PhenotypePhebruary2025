@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  phenotypephebruary2025:
+    image: ohdsi/phenotypephebruary2025:1.0.0
+    env_file: .env
+    build:
+      context: .
+      args:
+        APP_NAME: PhenotypePhebruary2025
+    ports:
+      - "3838:3838"
