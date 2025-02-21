@@ -24,8 +24,15 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# install R packages required
-RUN R -e 'install.packages(c("remotes", "rJava", "dplyr", "DatabaseConnector", "ggplot2", "plotly", "shinyWidgets", "shiny"), repos="http://cran.rstudio.com/")'
+# install required R packages - fail the build if there are any missing dependencies
+RUN R -e ' \
+  install.packages(c("remotes", "rJava", "dplyr", "DatabaseConnector", "ggplot2", "plotly", "shinyWidgets", "shiny"), repos="http://cran.rstudio.com/"); \
+  pkgs <- c("remotes", "rJava", "dplyr", "DatabaseConnector", "ggplot2", "plotly", "shinyWidgets", "shiny"); \
+  sapply(pkgs, function(pkg) { \
+    if (!require(pkg, character.only = TRUE, quietly = TRUE)) { \
+      stop(paste("Package", pkg, "failed to load")) \
+    } \
+  })'
 
 RUN R CMD javareconf
 
@@ -35,12 +42,14 @@ WORKDIR /srv/shiny-server/${APP_NAME}
 # copy the app directory into the image
 COPY ./app.R .
 
+# install additional R packages and fail the build if there are any missing dependencies
 RUN --mount=type=secret,id=build_github_pat \
-	cp /usr/local/lib/R/etc/Renviron /tmp/Renviron \
-        && echo "GITHUB_PAT=$(cat /run/secrets/build_github_pat)" >> /usr/local/lib/R/etc/Renviron \
-        && R -e "remotes::install_github('OHDSI/ShinyAppBuilder')" \
-	&& R -e "remotes::install_github('OHDSI/OhdsiShinyModules')" \
-        && cp /tmp/Renviron /usr/local/lib/R/etc/Renviron
+    cp /usr/local/lib/R/etc/Renviron /tmp/Renviron && \
+    echo "GITHUB_PAT=$(cat /run/secrets/build_github_pat)" >> /usr/local/lib/R/etc/Renviron && \
+    R -e "remotes::install_github('OHDSI/ResultModelManager'); if (!require('ResultModelManager', quietly = TRUE)) stop('Installation of ResultModelManager failed')" && \
+    R -e "remotes::install_github('OHDSI/ShinyAppBuilder'); if (!require('ShinyAppBuilder', quietly = TRUE)) stop('Installation of ShinyAppBuilder failed')" && \
+    R -e "remotes::install_github('OHDSI/OhdsiShinyModules'); if (!require('OhdsiShinyModules', quietly = TRUE)) stop('Installation of OhdsiShinyModules failed')" && \
+    cp /tmp/Renviron /usr/local/lib/R/etc/Renviron
 
 ENV DATABASECONNECTOR_JAR_FOLDER /root
 RUN R -e "DatabaseConnector::downloadJdbcDrivers('postgresql', pathToDriver='/root')"
