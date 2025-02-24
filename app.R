@@ -15,5 +15,7 @@ cli::cli_h2("Loading schema")
 CohortDiagnostics::launchDiagnosticsExplorer(
   connectionDetails = connectionDetails,
   resultsDatabaseSchema = "phenpheb25",
-  aboutText = "Phenotype Phebruary 2025"
+  aboutText = "Phenotype Phebruary 2025",
+  runOverNetwork = TRUE,
+  port = 3838  
 )
