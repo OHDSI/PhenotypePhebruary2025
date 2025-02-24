@@ -1,28 +1,4 @@
-library(OhdsiShinyModules)
-library(ShinyAppBuilder)
-
-shinyConfig <- initializeModuleConfig() |>
-  addModuleConfig(
-    createDefaultAboutConfig()
-  )  |>
-  addModuleConfig(
-    createDefaultDatasourcesConfig()
-  )  |>
-  addModuleConfig(
-    createDefaultCohortGeneratorConfig()
-  ) |>
-  addModuleConfig(
-    createDefaultCohortDiagnosticsConfig()
-  #) |>
-  # addModuleConfig(
-  #   createDefaultCharacterizationConfig()
-  # ) |>
-  # addModuleConfig(
-  #   createDefaultPredictionConfig()
-  # ) |>
-  #addModuleConfig(
-  #  createDefaultEstimationConfig()
-  )
+library(CohortDiagnostics)
 
 cli::cli_h1("Starting shiny server")
 serverStr <- paste0(Sys.getenv("shinydbServer"), "/", Sys.getenv("shinydbDatabase"))
@@ -36,9 +12,8 @@ connectionDetails <- DatabaseConnector::createConnectionDetails(
 )
 
 cli::cli_h2("Loading schema")
-ShinyAppBuilder::createShinyApp(
-   config = shinyConfig,
-   connectionDetails = connectionDetails,
-   resultDatabaseSettings = createDefaultResultDatabaseSettings(schema = "phenpheb25"),
-   title = "Phenotype Phebruary 2025"
+CohortDiagnostics::launchDiagnosticsExplorer(
+  connectionDetails = connectionDetails,
+  resultsDatabaseSchema = "phenpheb25",
+  aboutText = "Phenotype Phebruary 2025"
 )
